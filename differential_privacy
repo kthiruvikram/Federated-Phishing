@@ -1,0 +1,40 @@
+import torch
+from transformers import DistilBertForSequenceClassification
+from torch.utils.data import DataLoader, TensorDataset, Subset
+import random
+
+def train_with_manual_dp(client_enc, client_labels, noise_multiplier=1.0, sample_size=500):
+    model = DistilBertForSequenceClassification.from_pretrained('distilbert-base-uncased', num_labels=2)
+    model.train()
+    dataset = TensorDataset(client_enc['input_ids'], client_enc['attention_mask'], client_labels)
+    if len(dataset) < 128:
+        print("Client skipped: too few samples.")
+        return 0.0, 0.0
+    # Sample for speed
+    indices = random.sample(range(len(dataset)), min(sample_size, len(dataset)))
+    dataset = Subset(dataset, indices)
+    loader = DataLoader(dataset, batch_size=16)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-5)
+    total_loss = 0
+    for i, batch in enumerate(loader):
+        optimizer.zero_grad()
+        outputs = model(input_ids=batch[0], attention_mask=batch[1], labels=batch[2])
+        loss = outputs.loss
+        loss.backward()
+        # Manual noise
+        for param in model.parameters():
+            if param.grad is not None:
+                param.grad += torch.randn_like(param.grad) * noise_multiplier
+        optimizer.step()
+        total_loss += loss.item()
+        if i % 10 == 0:  # Progress
+            print(f"Processed {i+1}/{len(loader)} batches.")
+    avg_loss = total_loss / len(loader)
+    eps_estimate = noise_multiplier ** 2 / len(dataset)  # Rough epsilon
+    return eps_estimate, avg_loss
+
+# Run on 3 clients
+client_data = torch.load('non_iid_client_data.pt')
+for idx, client in enumerate(client_data[:3]):
+    eps, loss = train_with_manual_dp(client, client['labels'])
+    print(f"Client {idx}: Epsilon estimate: {eps:.2f}, Avg loss: {loss:.4f}")
