@@ -62,12 +62,6 @@ federated-phishing/
 | Centralized      | 96.8%    | 96.5%     | 97.1%  | 96.8%    |
 | Federated (5 Clients) | 95.3%    | 95.0%     | 95.6%  | 95.3%    |
 
-**Sample Accuracy Plot:**  
-![Accuracy Plot](results/accuracy_plot.png)
-
-**Sample Loss Plot:**  
-![Loss Plot](results/loss_plot.png)
-
 ---
 
 ## 🚀 Installation & Usage
