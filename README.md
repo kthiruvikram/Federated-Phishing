@@ -64,8 +64,3 @@ federated-phishing/
 
 ---
 
-## 🚀 Installation & Usage
-### 1️⃣ Clone the Repository
-```bash
-git clone https://github.com/yourusername/Federated-Phishing.git
-cd Federated-Phishing
